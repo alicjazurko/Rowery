@@ -95,7 +95,7 @@ def bike_road(bikeNumber=25734):
 
     # ustawiamy środek mapy na pierwszy punkt trasy
     m = folium.Map(
-        location=[52.2298, 21.0118], tiles="Stamen Terrain", zoom_start=12
+        location=center, tiles="Stamen Terrain", zoom_start=12
     )
     line = folium.PolyLine([road], color="blue", fill=False)
     line.add_to(m)
@@ -115,21 +115,24 @@ class Window(QtWidgets.QMainWindow):
         self.initWindow()
 
     def initWindow(self):
-        self.setWindowTitle(self.tr("Mapa folium"))
+        self.setWindowTitle(self.tr("Analiza rowerów"))
         self.setFixedSize(1500, 800)
         self.buttonUI()
 
     def buttonUI(self):
-        shortPathButton = QtWidgets.QPushButton(self.tr("button"))
-        button2 = QtWidgets.QPushButton(self.tr("button1"))
-        button3 = QtWidgets.QPushButton(self.tr("button2"))
+        button1 = QtWidgets.QPushButton(self.tr("Wyznacz trasę"))
+        button2 = QtWidgets.QPushButton(self.tr("Rozmieszczenie stacji"))
+        button3 = QtWidgets.QPushButton(self.tr("Aktywność stacji"))
+        input1 = QtWidgets.QLineEdit(self)
+        input1.setPlaceholderText("wpisz numer roweru")
 
-        shortPathButton.setFixedSize(120, 50)
-        button2.setFixedSize(120, 50)
-        button3.setFixedSize(120, 50)
+        button1.setFixedSize(120, 40)
+        button2.setFixedSize(120, 40)
+        button3.setFixedSize(120, 40)
+        input1.setFixedSize(120, 30)
 
         self.view = QtWebEngineWidgets.QWebEngineView()
-        self.view.setContentsMargins(50, 50, 50, 50)
+        self.view.setContentsMargins(40, 50, 50, 50)
 
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
@@ -137,20 +140,42 @@ class Window(QtWidgets.QMainWindow):
 
         button_container = QtWidgets.QWidget()
         vlay = QtWidgets.QVBoxLayout(button_container)
+        # vlay1 = QtWidgets.QVBoxLayout(button_container)
         vlay.setSpacing(20)
         vlay.addStretch()
-        vlay.addWidget(shortPathButton)
+        # vlay1.setSpacing(20)
+        # vlay1.addStretch()
+        vlay.addWidget(input1)
+        vlay.addWidget(button1)
         vlay.addWidget(button2)
         vlay.addWidget(button3)
         vlay.addStretch()
         lay.addWidget(button_container)
         lay.addWidget(self.view, stretch=1)
 
-        m = bike_road(25734)
+        def textshow():
+            print(input1.text())
 
-        data = io.BytesIO()
-        m.save(data, close_file=False)
-        self.view.setHtml(data.getvalue().decode())
+        def show_map(m):
+            data = io.BytesIO()
+            m.save(data, close_file=False)
+            self.view.setHtml(data.getvalue().decode())
+            input1.clear()
+
+        # bikenum = input1.text()
+        m = show_stations()
+        mb = bike_road(24571)
+
+        # 24571,28271,28115,27905,27833,27734,27379
+
+        show_map(m)
+
+        button1.clicked.connect(lambda: show_map(mb))
+        button2.clicked.connect(lambda: show_map(m))
+        button3.clicked.connect(lambda: textshow())
+        # if input1.text():
+        #     input1.setText("")
+        #     input1.setFocus()
 
 
 if __name__ == "__main__":
