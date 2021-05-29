@@ -4,7 +4,7 @@ import os
 import datetime as dt
 import json
 
-
+#Otwarcie pojedynczego pliku json
 with open('C:/Users/alicj/Desktop/python/veturilo/rowery/20180304_000020.json') as bicycles:
     data = json.load(bicycles)
 
@@ -34,7 +34,7 @@ def initialStationData(data):
     df = df.set_index("uid")
     return df
 
-
+#Funkcja zliczająca wypożyczone rowery
 def rented_bikes_num(new_bikes_list, old_bikes_list):
     counter = 0
     # if not bool(new_bikes_list) or not bool(old_bikes_list): return 0
@@ -57,7 +57,7 @@ def rented_bikes_num(new_bikes_list, old_bikes_list):
 
     return counter
 
-
+#Funkcja pobierająca podstawowe dane o stacjach i aktywności na nich dla wszystkich dni tygodnia po kolei
 def bikes(files):
 
     for i, file in enumerate(files):
@@ -122,86 +122,84 @@ def bikes(files):
 
     return df
 
-
+#Zapisanie dataframe z funkcji bikes do zmiennej
 weekActivity = bikes(files)
 
+#utworzenie pliku json z informacjami o aktywności
 weekActivity.to_json('C:/Users/alicj/Desktop/python/weekActivity.json')
 
 with open('C:/Users/alicj/Desktop/python/weekActivity.json') as weekActivity:
     data = json.load(weekActivity)
     print(weekActivity)
 
-print(data)
+#print(data)
 
 dfAct = pd.DataFrame.from_dict(data, orient="columns")
-dfAct
+#dfAct
 
-# Sprawdzam zakres wypożyczeń do uwzględnienia
+#Sprawdzam zakres wypożyczeń do uwzględnienia
+#Ta część nie musi być w głównym kodzie bo nic nie wnosi poza informacją dla mnie na początku 
+#najwięcej wypożyczeń
+taken = weekActivity['Sunday']
+MAX = 0
+for station in range(len(weekActivity)):
+    if taken[station] > MAX:
+        MAX = taken[station]
+print(MAX)
+
+#Najmniej wypożyczeń
+MIN = 0
+for station in range(len(weekActivity)):
+     if taken[station] < MIN:
+        MIN = taken[station]
+print(MIN)
 
 
-def all_stations_activity(day="Monday"):
-
-    # najwięcej wypożyczeń
-    # ____ !!! ____
-    # tutaj jakoś zmieniać dni z dataframe i wpisywać zmienną day, którą będziemy zczytywać z GUI
-    taken = dfAct[day]
-    MAX = 0
-    for station in range(len(dfAct)):
-        if taken[station] > MAX:
-            MAX = taken[station]
-    MAX
-
-    # Najmniej wypożyczeń
-    MIN = 0
-    for station in range(len(dfAct)):
-        if taken[station] < MIN:
-            MIN = taken[station]
-    print(MAX)
-    print(MIN)
-
-    # Tworzenie mapy aktywności
-    m_act = folium.Map(location=[52.2298, 21.0118], zoom_start=10)
-
-    # Dodawanie markerów w zależności od aktywności stacji
-    for i in range(len(dfAct)):
-        # nie chciało zapisać popup dopóki wartości nie były typu string
-        nr = str(dfAct.iloc[i]['number'])
-        nazwa = str(dfAct.iloc[i]['name'])
-        ilosc = str(dfAct.iloc[i]['Monday'])
-
-        if taken[i] > 1500:
+#Stworzenie funkcji wyświetlającej mapę aktywności w zależności od dnia tygodnia
+def day_activity(day):
+    
+    #Tworzenie mapy
+    m_act = folium.Map(location=[52.2298,21.0118], zoom_start=10)
+    
+    #pobranie wypożyczeń z danego dnia dla wszystkich stacji
+    taken = weekActivity[day]  
+    
+    #Dodawanie markerów w zależności od aktywności stacji
+    for i in range(len(weekActivity)): 
+        
+        #nie chciało zapisać popup dopóki wartości nie były typu string
+        nr = str(weekActivity.iloc[i]['number'])
+        nazwa = str(weekActivity.iloc[i]['name'])
+        ilosc = str(weekActivity.iloc[i][day])
+    
+        if taken[i] > 300:  
             folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(
-                    color="red", icon="angle-double-up", prefix='fa')
+            location=[weekActivity.iloc[i]['lat'], weekActivity.iloc[i]['lng']],
+            popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+            icon = folium.Icon(color="red",icon="angle-double-up", prefix='fa')
             ).add_to(m_act)
-        if taken[i] in range(1000, 1500):
+        if taken[i] in range(150,300):  
             folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="orange", icon="angle-up", prefix='fa')
+            location=[weekActivity.iloc[i]['lat'], weekActivity.iloc[i]['lng']],
+            popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+            icon = folium.Icon(color="orange",icon="angle-up", prefix='fa')
             ).add_to(m_act)
-        if taken[i] in range(500, 1000):
+        if taken[i] in range(50,150):  
             folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="blue", icon="angle-down", prefix='fa')
+            location=[weekActivity.iloc[i]['lat'], weekActivity.iloc[i]['lng']],
+            popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+            icon = folium.Icon(color="blue",icon="angle-down", prefix='fa')
             ).add_to(m_act)
-        if taken[i] in range(0, 500):
+        if taken[i] in range(0,50):  
             folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="darkblue",
-                                 icon="angle-double-down", prefix='fa')
+            location=[weekActivity.iloc[i]['lat'], weekActivity.iloc[i]['lng']],
+            popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+            icon = folium.Icon(color="darkblue",icon="angle-double-down", prefix='fa')
             ).add_to(m_act)
     return m_act
 
+#Sprawdzam czy funkcja działa
+day = "Saturday"
+day_activity(day)
 
-all_stations_activity("Monday")
-all_stations_activity("Tuesday")
-all_stations_activity("Wednesday")
-all_stations_activity("Thursday")
-all_stations_activity("Friday")
-all_stations_activity("Saturday")
-all_stations_activity("Sunday")
+
