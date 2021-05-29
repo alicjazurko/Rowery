@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+from typing import Text
 import pandas as pd
 import folium
 import datetime as dt
@@ -9,6 +10,7 @@ from ipyleaflet import Map, Marker, Polyline
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 import json
 from folium.plugins import MarkerCluster
+from PyQt5.QtWidgets import QComboBox, QVBoxLayout, QDialog
 
 # pobranie danych
 with open('C:/Users/alicj/Desktop/python/veturilo/rowery/20180304_000020.json') as bicycles:
@@ -183,21 +185,36 @@ class Window(QtWidgets.QMainWindow):
 
     def initWindow(self):
         self.setWindowTitle(self.tr("Analiza rowerów"))
-        self.setFixedSize(1500, 800)
+        self.setFixedSize(1200, 800)
         self.buttonUI()
+        # QtCore.QMetaObject.connectSlotsByName(Window)
 
     def buttonUI(self):
+
         button1 = QtWidgets.QPushButton(self.tr("Wyznacz trasę"))
         button2 = QtWidgets.QPushButton(self.tr("Rozmieszczenie stacji"))
         button3 = QtWidgets.QPushButton(self.tr("Aktywność stacji"))
-        input1 = QtWidgets.QLineEdit(self)
-        input1.setPlaceholderText("wpisz numer roweru")
+        #input1 = QtWidgets.QLineEdit(self)
+        #input1.setPlaceholderText("wpisz numer roweru")
+        self.numer_roweru = QtWidgets.QLabel()
+        # button4 = QtWidgets.QPushButton(self.tr("Wyświetl wykres aktywności"))
+        combo = QComboBox(self)
+        combo.addItem("-Wybierz dzień-")
+        combo.addItem("Poniedzialek")
+        combo.addItem("Wtorek")
+        combo.addItem("Sroda")
+        combo.addItem("Czwartek")
+        combo.addItem("Piatek")
+        combo.addItem("Sobota")
+        combo.addItem("Niedziela")
 
         button1.setFixedSize(120, 40)
         button2.setFixedSize(120, 40)
         button3.setFixedSize(120, 40)
-        input1.setFixedSize(120, 30)
-
+        # button4.setFixedSize(120, 40)
+        combo.setFixedSize(120, 40)
+        #input1.setFixedSize(120, 30)
+        # button2.clicked.connect(self.takeinputs)
         self.view = QtWebEngineWidgets.QWebEngineView()
         self.view.setContentsMargins(40, 50, 50, 50)
 
@@ -209,10 +226,13 @@ class Window(QtWidgets.QMainWindow):
         vlay = QtWidgets.QVBoxLayout(button_container)
         vlay.setSpacing(20)
         vlay.addStretch()
-        vlay.addWidget(input1)
+        # vlay.addWidget(input1)
+        vlay.addWidget(self.numer_roweru)
         vlay.addWidget(button1)
         vlay.addWidget(button2)
         vlay.addWidget(button3)
+        vlay.addWidget(combo)
+        # vlay.addWidget(button4)
         vlay.addStretch()
         lay.addWidget(button_container)
         lay.addWidget(self.view, stretch=1)
@@ -221,20 +241,30 @@ class Window(QtWidgets.QMainWindow):
             data = io.BytesIO()
             m.save(data, close_file=False)
             self.view.setHtml(data.getvalue().decode())
-            input1.clear()
 
-        # bikenum = input1.text()
+        def show_bike_road(self):
+            bike_number, done1 = QtWidgets.QInputDialog.getText(
+                self, 'Okno Wpisywania', 'Wpisz numer roweru:')
+
+            if done1:
+                self.numer_roweru.setText("wybrano rower: " + str(bike_number))
+                m = bike_road(str(bike_number))
+                data = io.BytesIO()
+                m.save(data, close_file=False)
+                self.view.setHtml(data.getvalue().decode())
+
         m = show_stations()
-        mb = bike_road(24571)
+
         ma = all_stations_activity("Monday")
 
-        # 24571,28271,28115,27905,27833,27734,27379
+        # 24571,28271,28115,27905,27833,27734,27833
 
         show_map(m)
 
-        button1.clicked.connect(lambda: show_map(mb))
+        button1.clicked.connect(lambda: show_bike_road(self))
         button2.clicked.connect(lambda: show_map(m))
         button3.clicked.connect(lambda: show_map(ma))
+        # button4.clicked.connect()
 
 
 if __name__ == "__main__":
