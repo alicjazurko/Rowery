@@ -10,6 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 import json
 from folium.plugins import MarkerCluster
 
+# pobranie danych
 with open('C:/Users/alicj/Desktop/python/veturilo/rowery/20180304_000020.json') as bicycles:
     data = json.load(bicycles)
 
@@ -24,12 +25,14 @@ for t in path:
 
 files = sorted(files)
 
-
 # nazwy wszystkich stacji
 stations = data[0]["places"]
 
 df = pd.DataFrame(stations)
-df
+
+# -------------------------------------------------------------------
+# Rozmieszczenie stacji
+# -------------------------------------------------------------------
 
 
 def show_stations():
@@ -45,6 +48,12 @@ def show_stations():
             popup=df.iloc[i]['name'],
         ).add_to(marker_cluster)
     return m
+
+# -------------------------------------------------------------------
+# Trasa roweru
+# -------------------------------------------------------------------
+
+# funkcja pokazująca gdzie aktualnie jest rower (w którym pliku)
 
 
 def where_is_bike(prn, bike):
@@ -73,6 +82,8 @@ def where_is_bike(prn, bike):
         except:
             return ('Błąd nieznany w pliku {}}'.format(prn))
     return 'w użytku'
+
+# funkcja wyznaczająca trasę roweru zwraca mapę
 
 
 def bike_road(bikeNumber=25734):
@@ -105,9 +116,65 @@ def bike_road(bikeNumber=25734):
     # m.add_layer(marker)
     return m
 
+# -------------------------------------------------------------------
+# Mapa aktywności wszystkich stacji w zależności od dnia tygodnia
+# -------------------------------------------------------------------
 
-bike_road()
 
+with open('C:/Users/alicj/Desktop/python/weekActivity.json') as weekActivity:
+    data = json.load(weekActivity)
+
+dfAct = pd.DataFrame.from_dict(data, orient="columns")
+
+
+def all_stations_activity(day="Monday"):
+
+    taken = dfAct[day]
+
+    # Tworzenie mapy aktywności
+    m_act = folium.Map(location=[52.2298, 21.0118],
+                       tiles="Stamen Terrain", zoom_start=10)
+
+    # Dodawanie markerów w zależności od aktywności stacji
+    for i in range(len(dfAct)):
+        # aby zapisac popup muszą być wartości typu string
+        nr = str(dfAct.iloc[i]['number'])
+        nazwa = str(dfAct.iloc[i]['name'])
+        ilosc = str(dfAct.iloc[i][day])
+
+        # zakresy do kolorów aktywności (pinezki)
+        if taken[i] > 300:
+            folium.Marker(
+                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
+                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+                icon=folium.Icon(
+                    color="red", icon="angle-double-up", prefix='fa')
+            ).add_to(m_act)
+        if taken[i] in range(150, 300):
+            folium.Marker(
+                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
+                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+                icon=folium.Icon(color="orange", icon="angle-up", prefix='fa')
+            ).add_to(m_act)
+        if taken[i] in range(50, 150):
+            folium.Marker(
+                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
+                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+                icon=folium.Icon(color="blue", icon="angle-down", prefix='fa')
+            ).add_to(m_act)
+        if taken[i] in range(0, 50):
+            folium.Marker(
+                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
+                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
+                icon=folium.Icon(color="darkblue",
+                                 icon="angle-double-down", prefix='fa')
+            ).add_to(m_act)
+    return m_act
+
+
+# -------------------------------------------------------------------
+# Graficzny interfejs użytkownika
+# -------------------------------------------------------------------
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -140,11 +207,8 @@ class Window(QtWidgets.QMainWindow):
 
         button_container = QtWidgets.QWidget()
         vlay = QtWidgets.QVBoxLayout(button_container)
-        # vlay1 = QtWidgets.QVBoxLayout(button_container)
         vlay.setSpacing(20)
         vlay.addStretch()
-        # vlay1.setSpacing(20)
-        # vlay1.addStretch()
         vlay.addWidget(input1)
         vlay.addWidget(button1)
         vlay.addWidget(button2)
@@ -152,9 +216,6 @@ class Window(QtWidgets.QMainWindow):
         vlay.addStretch()
         lay.addWidget(button_container)
         lay.addWidget(self.view, stretch=1)
-
-        def textshow():
-            print(input1.text())
 
         def show_map(m):
             data = io.BytesIO()
@@ -165,6 +226,7 @@ class Window(QtWidgets.QMainWindow):
         # bikenum = input1.text()
         m = show_stations()
         mb = bike_road(24571)
+        ma = all_stations_activity("Monday")
 
         # 24571,28271,28115,27905,27833,27734,27379
 
@@ -172,10 +234,7 @@ class Window(QtWidgets.QMainWindow):
 
         button1.clicked.connect(lambda: show_map(mb))
         button2.clicked.connect(lambda: show_map(m))
-        button3.clicked.connect(lambda: textshow())
-        # if input1.text():
-        #     input1.setText("")
-        #     input1.setFocus()
+        button3.clicked.connect(lambda: show_map(ma))
 
 
 if __name__ == "__main__":
