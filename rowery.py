@@ -1,5 +1,4 @@
 import pandas as pd
-import folium
 import os
 import datetime as dt
 import json
@@ -17,7 +16,10 @@ for t in path:
                     int(t[9:11]), int(t[11:13]), int(t[13:15]))
     files.append((x, t))  # data w formacie datetime i nazwa pliku
 
+# lista plików (datetime, nazwa)
 files = sorted(files)
+
+# pusty dataframe który będzie uzupełniany dniami tygodnia
 
 
 def initialStationData(data):
@@ -33,6 +35,8 @@ def initialStationData(data):
     df["Sunday"] = [0] * len(df)
     df = df.set_index("uid")
     return df
+
+# zliczanie wypożyczonych rowerów na stacjach
 
 
 def rented_bikes_num(new_bikes_list, old_bikes_list):
@@ -57,15 +61,18 @@ def rented_bikes_num(new_bikes_list, old_bikes_list):
 
     return counter
 
+# funkcja która uzupełnia dataframe aktywnością w poszczególne dni na poszczególnych stacjach
+
 
 def bikes(files):
 
     for i, file in enumerate(files):
         with open('/Users/alicj/Desktop/python/veturilo/rowery/' + file[1]) as jsons:
             data = json.load(jsons)
+            # pusty plik
             if data == []:
                 continue
-
+            # pierwszy plik
             if i == 0:
                 df = initialStationData(data)
                 stations = data[0]["places"]
@@ -116,92 +123,11 @@ def bikes(files):
                     df.loc[uid, "Sunday"] = n
 
                 initialBikesList.loc[uid, "bike_numbers"] = bikes
-                # return
-
-                # initialBikesList = bikes
 
     return df
 
 
 weekActivity = bikes(files)
 
+# zapisanie dataframe do formatu JSON
 weekActivity.to_json('C:/Users/alicj/Desktop/python/weekActivity.json')
-
-with open('C:/Users/alicj/Desktop/python/weekActivity.json') as weekActivity:
-    data = json.load(weekActivity)
-    print(weekActivity)
-
-print(data)
-
-dfAct = pd.DataFrame.from_dict(data, orient="columns")
-dfAct
-
-# Sprawdzam zakres wypożyczeń do uwzględnienia
-
-
-def all_stations_activity(day="Monday"):
-
-    # najwięcej wypożyczeń
-    # ____ !!! ____
-    # tutaj jakoś zmieniać dni z dataframe i wpisywać zmienną day, którą będziemy zczytywać z GUI
-    taken = dfAct[day]
-    MAX = 0
-    for station in range(len(dfAct)):
-        if taken[station] > MAX:
-            MAX = taken[station]
-    MAX
-
-    # Najmniej wypożyczeń
-    MIN = 0
-    for station in range(len(dfAct)):
-        if taken[station] < MIN:
-            MIN = taken[station]
-    print(MAX)
-    print(MIN)
-
-    # Tworzenie mapy aktywności
-    m_act = folium.Map(location=[52.2298, 21.0118], zoom_start=10)
-
-    # Dodawanie markerów w zależności od aktywności stacji
-    for i in range(len(dfAct)):
-        # nie chciało zapisać popup dopóki wartości nie były typu string
-        nr = str(dfAct.iloc[i]['number'])
-        nazwa = str(dfAct.iloc[i]['name'])
-        ilosc = str(dfAct.iloc[i]['Monday'])
-
-        if taken[i] > 1500:
-            folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(
-                    color="red", icon="angle-double-up", prefix='fa')
-            ).add_to(m_act)
-        if taken[i] in range(1000, 1500):
-            folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="orange", icon="angle-up", prefix='fa')
-            ).add_to(m_act)
-        if taken[i] in range(500, 1000):
-            folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="blue", icon="angle-down", prefix='fa')
-            ).add_to(m_act)
-        if taken[i] in range(0, 500):
-            folium.Marker(
-                location=[dfAct.iloc[i]['lat'], dfAct.iloc[i]['lng']],
-                popup='stacja: ' + nr + '\n' + nazwa + '\naktywność: ' + ilosc,
-                icon=folium.Icon(color="darkblue",
-                                 icon="angle-double-down", prefix='fa')
-            ).add_to(m_act)
-    return m_act
-
-
-all_stations_activity("Monday")
-all_stations_activity("Tuesday")
-all_stations_activity("Wednesday")
-all_stations_activity("Thursday")
-all_stations_activity("Friday")
-all_stations_activity("Saturday")
-all_stations_activity("Sunday")
