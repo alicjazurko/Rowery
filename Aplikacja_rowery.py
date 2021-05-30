@@ -139,9 +139,8 @@ def plot_activity(stationName):
     dfAct1 = dfAct.loc[dfAct["name"] == stationName, days]
     dflist = dfAct1.values.tolist()
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(num=str(stationName), figsize=(12, 6))
     plt.bar(days, dflist[0])
-    plt.title("Wykres aktywności tygodniowej")
     plt.title("Aktywność tygodniowa na stacji")
     plt.show()
 
@@ -206,6 +205,7 @@ class Window(QtWidgets.QMainWindow):
 
     def initWindow(self):
         self.setWindowTitle(self.tr("Analiza rowerów"))
+        self.setMinimumSize(1000, 800)
         self.showMaximized()
         self.buttonUI()
         print(self)
@@ -225,7 +225,7 @@ class Window(QtWidgets.QMainWindow):
         self.one_super_label = QtWidgets.QLabel()
         self.one_super_label.setFont(QtGui.QFont("Arial font", 12))
         self.title_label = QtWidgets.QLabel(
-            "Wizualizacja danych\n z warszawskich rowerów\n Veturillo ")
+            "Wizualizacja danych\nz warszawskich rowerów\nVeturillo ")
         self.title_label.setFont(QtGui.QFont("Roboto", 20))
         self.empty_label = QtWidgets.QLabel()
         self.graphWidget = pg.PlotWidget()
